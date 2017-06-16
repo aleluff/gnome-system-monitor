@@ -305,6 +305,13 @@ cb_show_whose_processes_changed(Gio::Settings& settings, Glib::ustring key, GsmA
     }
 }
 
+static void init_nethogs (){
+
+    //TODO Freq + problem no device + test autres system
+
+    //sudo setcap "cap_net_admin,cap_net_raw+pe"
+}
+
 GsmTreeView *
 proctable_new (GsmApplication * const app)
 {
@@ -783,8 +790,31 @@ get_process_memory_info(ProcInfo *info)
 static void
 get_process_network_info(ProcInfo *info)
 {
-    //info->net->in = tokens.at(7);
-    //info->net->out = tokens.at(8);
+    if(NethogsUpdates::getNetHogsMonitorStatus() != NETHOGS_STATUS_OK){
+		return;
+	}
+
+    NethogsUpdates::Update update;
+
+    while(NethogsUpdates::getRowUpdate(update))
+    {
+        if (update.record.pid != info->pid
+            || update.action == NETHOGS_APP_ACTION_REMOVE){
+            continue;
+        }
+
+        gulong coef = long(GsmApplication::get()->config.update_interval) / 1000; //TODO 500
+        gulong iTotal = update.record.recv_bytes;
+        gulong oTotal = update.record.sent_bytes;
+
+        info->net->In->current = (iTotal - info->net->In->total) / coef;
+        info->net->Out->current = (oTotal - info->net->Out->total) / coef;
+
+        info->net->In->total = iTotal;
+        info->net->Out->total = oTotal;
+
+        break;
+    }
 }
 
 static void
