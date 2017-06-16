@@ -12,7 +12,7 @@ extern "C" {
 #include <errno.h>
 
 //////////////////////////////
-extern ProcList *processes;
+extern NProcList *processes;
 extern Process *unknowntcp;
 extern Process *unknownudp;
 extern Process *unknownip;
@@ -161,8 +161,8 @@ static void nethogsmonitor_handle_update(NethogsMonitorCallback cb) {
   refreshconninode();
   refreshcount++;
 
-  ProcList *curproc = processes;
-  ProcList *previousproc = NULL;
+  NProcList *curproc = processes;
+  NProcList *previousproc = NULL;
   int nproc = processes->size();
 
   while (curproc != NULL) {
@@ -189,7 +189,7 @@ static void nethogsmonitor_handle_update(NethogsMonitorCallback cb) {
         monitor_record_map.erase(curproc);
       }
 
-      ProcList *todelete = curproc;
+      NProcList *todelete = curproc;
       Process *p_todelete = curproc->getVal();
       if (previousproc) {
         previousproc->next = curproc->next;

@@ -63,7 +63,7 @@ extern std::map<std::string, unsigned long> conninode;
 Process *unknowntcp;
 Process *unknownudp;
 Process *unknownip;
-ProcList *processes;
+NProcList *processes;
 
 float tomb(u_int32_t bytes) { return ((double)bytes) / 1024 / 1024; }
 float tokb(u_int32_t bytes) { return ((double)bytes) / 1024; }
@@ -74,9 +74,9 @@ void process_init() {
   unknowntcp = new Process(0, "", "unknown TCP");
   // unknownudp = new Process (0, "", "unknown UDP");
   // unknownip = new Process (0, "", "unknown IP");
-  processes = new ProcList(unknowntcp, NULL);
-  // processes = new ProcList (unknownudp, processes);
-  // processes = new ProcList (unknownip, processes);
+  processes = new NProcList(unknowntcp, NULL);
+  // processes = new NProcList (unknownudp, processes);
+  // processes = new NProcList (unknownip, processes);
 }
 
 int Process::getLastPacket() {
@@ -165,7 +165,7 @@ void Process::gettotalb(float *recvd, float *sent) {
 }
 
 Process *findProcess(struct prg_node *node) {
-  ProcList *current = processes;
+  NProcList *current = processes;
   while (current != NULL) {
     Process *currentproc = current->getVal();
     assert(currentproc != NULL);
@@ -189,7 +189,7 @@ Process *findProcess(unsigned long inode) {
   return findProcess(node);
 }
 
-int ProcList::size() {
+int NProcList::size() {
   int i = 1;
 
   if (next != NULL)
@@ -199,7 +199,7 @@ int ProcList::size() {
 }
 
 void check_all_procs() {
-  ProcList *curproc = processes;
+  NProcList *curproc = processes;
   while (curproc != NULL) {
     curproc->getVal()->check();
     curproc = curproc->getNext();
@@ -259,7 +259,7 @@ Process *getProcess(unsigned long inode, const char *devicename) {
           if (!ROBUST)
                   assert(false);
   }*/
-  processes = new ProcList(newproc, processes);
+  processes = new NProcList(newproc, processes);
   return newproc;
 }
 
@@ -339,7 +339,7 @@ Process *getProcess(Connection *connection, const char *devicename) {
 
   if (proc == NULL) {
     proc = new Process(inode, "", connection->refpacket->gethashstring());
-    processes = new ProcList(proc, processes);
+    processes = new NProcList(proc, processes);
   }
 
   proc->connections = new ConnList(connection, proc->connections);
@@ -352,16 +352,16 @@ void procclean() {
 }
 
 void remove_timed_out_processes() {
-  ProcList *previousproc = NULL;
+  NProcList *previousproc = NULL;
 
-  for (ProcList *curproc = processes; curproc != NULL; curproc = curproc->next) {
+  for (NProcList *curproc = processes; curproc != NULL; curproc = curproc->next) {
     if ((curproc->getVal()->getLastPacket() + PROCESSTIMEOUT <=
          curtime.tv_sec) &&
         (curproc->getVal() != unknowntcp) &&
         (curproc->getVal() != unknownudp) && (curproc->getVal() != unknownip)) {
       if (DEBUG)
         std::cout << "PROC: Deleting process\n";
-      ProcList *todelete = curproc;
+      NProcList *todelete = curproc;
       Process *p_todelete = curproc->getVal();
       if (previousproc) {
         previousproc->next = curproc->next;

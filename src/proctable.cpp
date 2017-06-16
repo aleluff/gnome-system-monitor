@@ -63,9 +63,59 @@
 #include "legacy/treeview.h"
 #include "systemd.h"
 
+#include "nethogs/decpcap.c"
+#include "nethogs/process.cpp"
+#include "nethogs/connection.cpp"
+#include "nethogs/conninode.cpp"
+#include "nethogs/inode2prog.cpp"
+#include "nethogs/devices.cpp"
+#include "nethogs/packet.cpp"
+#include "nethogs/libnethogs.cpp"
+
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
+
+
+extern NProcList *processes;
+int nethogs_status;
+
+static void init_nethogs (){
+
+    //TODO Freq + problem no device + test autres system
+
+    //sudo setcap "cap_net_admin,cap_net_raw+pe"
+    //clean nethogs repo
+
+    nethogs_status = nethogsmonitor_init();
+    if (nethogs_status != NETHOGS_STATUS_OK){
+	    return;
+    }
+}
+
+static void
+refresh_list_nethogs(){
+
+    if (nethogs_status != NETHOGS_STATUS_OK){
+	    return;
+    }
+
+    refreshconninode();
+
+    NProcList *curproc = processes;
+
+    while (curproc != NULL) {
+
+	    assert(curproc->getVal() != NULL);
+
+	    float value_sent = 0, value_recv = 0;
+
+	    curproc->getVal()->gettotalb(&value_recv, &value_sent);
+
+	    assert(curproc->getVal()->pid >= 0);
+	    curproc = curproc->next;
+    }
+}
 
 static void
 cb_save_tree_state(gpointer, gpointer data)
@@ -264,7 +314,7 @@ process_visibility_func (GtkTreeModel *model, GtkTreeIter *iter, gpointer data)
     } else {
         match = iter_matches_search_key (model, iter, search_text);
     }
-        
+
     gtk_tree_path_free (tree_path);
 
     return match;
@@ -303,13 +353,6 @@ cb_show_whose_processes_changed(Gio::Settings& settings, Glib::ustring key, GsmA
         proctable_clear_tree (app);
         proctable_update (app);
     }
-}
-
-static void init_nethogs (){
-
-    //TODO Freq + problem no device + test autres system
-
-    //sudo setcap "cap_net_admin,cap_net_raw+pe"
 }
 
 GsmTreeView *
@@ -630,6 +673,8 @@ proctable_new (GsmApplication * const app)
 
     gtk_widget_show (GTK_WIDGET (proctree));
 
+    init_nethogs();
+
     return proctree;
 }
 
@@ -790,31 +835,16 @@ get_process_memory_info(ProcInfo *info)
 static void
 get_process_network_info(ProcInfo *info)
 {
-    if(NethogsUpdates::getNetHogsMonitorStatus() != NETHOGS_STATUS_OK){
-		return;
-	}
+    /*
+    gulong iTotal = update.record.recv_bytes;
+    gulong oTotal = update.record.sent_bytes;
 
-    NethogsUpdates::Update update;
+    info->net->In->current = (iTotal - info->net->In->total) / coef;
+    info->net->Out->current = (oTotal - info->net->Out->total) / coef;
 
-    while(NethogsUpdates::getRowUpdate(update))
-    {
-        if (update.record.pid != info->pid
-            || update.action == NETHOGS_APP_ACTION_REMOVE){
-            continue;
-        }
-
-        gulong coef = long(GsmApplication::get()->config.update_interval) / 1000; //TODO 500
-        gulong iTotal = update.record.recv_bytes;
-        gulong oTotal = update.record.sent_bytes;
-
-        info->net->In->current = (iTotal - info->net->In->total) / coef;
-        info->net->Out->current = (oTotal - info->net->Out->total) / coef;
-
-        info->net->In->total = iTotal;
-        info->net->Out->total = oTotal;
-
-        break;
-    }
+    info->net->In->total = iTotal;
+    info->net->Out->total = oTotal;
+    */
 }
 
 static void
@@ -1058,6 +1088,8 @@ refresh_list (GsmApplication *app, const pid_t* pid_list, const guint n)
                              gtk_tree_model_sort_get_model(GTK_TREE_MODEL_SORT (
                              gtk_tree_view_get_model (GTK_TREE_VIEW(app->tree))))));
     guint i;
+
+    refresh_list_nethogs();
 
     // Add or update processes in the process list
     for (i = 0; i < n; ++i) {

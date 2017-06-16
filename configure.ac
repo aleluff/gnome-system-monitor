@@ -22,7 +22,6 @@ AC_PROG_CXX
 AC_LANG([C++])
 AC_LANG_COMPILER_REQUIRE
 AX_CXX_COMPILE_STDCXX_11([],[mandatory])
-
 # Initialize libtool
 LT_PREREQ([2.2])
 LT_INIT

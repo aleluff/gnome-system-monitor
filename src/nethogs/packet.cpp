@@ -88,21 +88,6 @@ bool getLocal(const char *device, bool tracemode) {
 
 typedef u_int32_t tcp_seq;
 
-/* ppp header, i hope ;) */
-/* glanced from ethereal, it's 16 bytes, and the payload packet type is
- * in the last 2 bytes... */
-struct ppp_header {
-  u_int16_t dummy1;
-  u_int16_t dummy2;
-  u_int16_t dummy3;
-  u_int16_t dummy4;
-  u_int16_t dummy5;
-  u_int16_t dummy6;
-  u_int16_t dummy7;
-
-  u_int16_t packettype;
-};
-
 /* TCP header */
 // TODO take from elsewhere.
 struct tcp_hdr {

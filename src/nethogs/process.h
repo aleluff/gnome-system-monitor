@@ -112,17 +112,17 @@ private:
   uid_t uid;
 };
 
-class ProcList {
+class NProcList {
 public:
-  ProcList(Process *m_val, ProcList *m_next) {
+  NProcList(Process *m_val, NProcList *m_next) {
     assert(m_val != NULL);
     val = m_val;
     next = m_next;
   }
   int size();
   Process *getVal() { return val; }
-  ProcList *getNext() { return next; }
-  ProcList *next;
+  NProcList *getNext() { return next; }
+  NProcList *next;
 
 private:
   Process *val;

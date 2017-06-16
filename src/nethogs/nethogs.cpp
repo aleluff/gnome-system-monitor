@@ -38,8 +38,6 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
-#include "cui.h"
-
 extern "C" {
 #include "decpcap.h"
 }
