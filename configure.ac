@@ -89,6 +89,8 @@ AM_CONDITIONAL(HAVE_SYSTEMD, [test "$have_systemd" = "yes"])
 # Compiler warnings
 GNOME_COMPILE_WARNINGS([maximum])
 
+AC_SUBST(LIBS, " -lpcap -lm $LIBS")
+
 AC_ARG_ENABLE(more-warnings,
 [AS_HELP_STRING([--enable-more-warnings],[Maximum compiler warnings])],
 set_more_warnings="$enableval",[
@@ -103,7 +105,6 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
     -Wchar-subscripts -Wmissing-declarations -Wmissing-prototypes \
     -Wnested-externs -Wpointer-arith \
     -Wcast-align -Wsign-compare \
-    -lpcap -lm \
     $CFLAGS"
     CXXFLAGS="-Wall $CXXFLAGS"
 else

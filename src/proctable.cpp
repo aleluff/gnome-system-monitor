@@ -94,7 +94,7 @@ static void nethogsMonitorThreadProc()
 
 static void init_nethogs (){
 
-    //TODO Freq + problem no device + test autres system
+    //problem no device + test autres system
 
     //sudo setcap "cap_net_admin,cap_net_raw+pe"
     //ac : -lpcap -lm
