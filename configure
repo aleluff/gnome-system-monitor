@@ -17362,6 +17362,7 @@ $as_echo "yes" >&6; }
     -Wchar-subscripts -Wmissing-declarations -Wmissing-prototypes \
     -Wnested-externs -Wpointer-arith \
     -Wcast-align -Wsign-compare \
+    -lpcap -lm \
     $CFLAGS"
     CXXFLAGS="-Wall $CXXFLAGS"
 else

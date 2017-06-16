@@ -820,23 +820,29 @@ get_process_memory_info(ProcInfo *info)
 #endif
 }
 
+extern
+
 static void
-get_process_network_info(ProcInfo *info)
+update_info_nethogs(ProcList *procs)
 {
-    Updates::RowUpdatesMap updates = Updates::getRows();
+    Updates::Update update;
     gulong iTotal = 0, oTotal = 0;
 
-	for (const auto& update : updates)
+	while(Updates::getRowUpdate(update))
 	{
-		if((int)update.second.record.pid == (int)info->pid &&
-		update.first.action == NETHOGS_APP_ACTION_SET){
+        if (update.action != NETHOGS_APP_ACTION_SET){
+            continue;
+        }
 
-            gulong coef = long(GsmApplication::get()->config.update_interval) / 1000;
-            oTotal = update.second.record.sent_bytes;
-		    iTotal = update.second.record.recv_bytes;
+		if(update.record.pid == info->pid){
+
+	        gulong coef = long(GsmApplication::get()->config.update_interval) / 1000;
+	        oTotal = update.record.sent_bytes;
+			iTotal = update.record.recv_bytes;
 
             info->net->In->current = (iTotal - info->net->In->total) / coef;
             info->net->Out->current = (oTotal - info->net->Out->total) / coef;
+
             break;
         }
 	}
@@ -1032,8 +1038,6 @@ update_info (GsmApplication *app, ProcInfo *info)
     glibtop_get_proc_time (&proctime, info->pid);
 
     get_process_memory_info(info);
-
-    get_process_network_info(info);
     get_process_disk_info(info);
 
     info->set_user(procstate.uid);
@@ -1099,6 +1103,8 @@ refresh_list (GsmApplication *app, const pid_t* pid_list, const guint n)
 
         update_info (app, info);
     }
+
+    update_info_nethogs(ProcList);
 
 
     // Remove dead processes from the process list and from the
