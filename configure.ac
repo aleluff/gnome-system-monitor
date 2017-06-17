@@ -61,7 +61,7 @@ PKG_CHECK_MODULES(GSM_LEGACY,
 )
 
 AC_CHECK_FILE("nethogsenable", {
-	AC_CHECK_HEADERS([pcap.h],,[AC_MSG_ERROR([Pcap library is required: please install libpcap-dev)])
+	AC_CHECK_HEADERS([pcap.h],,[AC_MSG_ERROR([Pcap library is required: please install libpcap-dev])])
 	CFLAGS = "$CFLAGS -lpcap -m"
 })
 
