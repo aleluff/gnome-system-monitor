@@ -63,18 +63,6 @@
 #include "legacy/treeview.h"
 #include "systemd.h"
 
-#include <thread>
-#include "nethogs/decpcap.c"
-#include "nethogs/process.cpp"
-#include "nethogs/connection.cpp"
-#include "nethogs/conninode.cpp"
-#include "nethogs/inode2prog.cpp"
-#include "nethogs/devices.cpp"
-#include "nethogs/packet.cpp"
-#include "nethogs/libnethogs.cpp"
-#include "nethogs/updates.cpp"
-
-
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
@@ -97,7 +85,11 @@ static void init_nethogs (){
     //problem no device + test autres system
 
     //sudo setcap "cap_net_admin,cap_net_raw+pe"
-    //ac : -lpcap -lm
+
+    if (false){
+        #include <thread>
+        #include "nethogs/updates.cpp"
+    }
 
     std::thread nethogs_monitor_thread(&nethogsMonitorThreadProc);
 

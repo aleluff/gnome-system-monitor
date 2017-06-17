@@ -1,3 +1,11 @@
+#include "decpcap.c"
+#include "process.cpp"
+#include "connection.cpp"
+#include "conninode.cpp"
+#include "inode2prog.cpp"
+#include "devices.cpp"
+#include "packet.cpp"
+#include "libnethogs.cpp"
 #include "updates.h"
 #include <string.h>
 
