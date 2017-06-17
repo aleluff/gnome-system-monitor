@@ -86,10 +86,12 @@ static void init_nethogs (){
 
     //sudo setcap "cap_net_admin,cap_net_raw+pe"
 
-    if (false){
-        #include <thread>
-        #include "nethogs/updates.cpp"
+    if (access("../nethogsenable", F_OK ) == -1){
+        return;
     }
+
+    #include <thread>
+    #include "nethogs/updates.cpp"
 
     std::thread nethogs_monitor_thread(&nethogsMonitorThreadProc);
 
