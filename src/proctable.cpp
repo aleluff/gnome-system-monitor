@@ -63,9 +63,13 @@
 #include "legacy/treeview.h"
 #include "systemd.h"
 
+#include <thread>
+#include "nethogs/updates.cpp"
+
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
+
 
 int nethogs_status;
 
@@ -85,13 +89,6 @@ static void init_nethogs (){
     //problem no device + test autres system
 
     //sudo setcap "cap_net_admin,cap_net_raw+pe"
-
-    if (access("../nethogsenable", F_OK ) == -1){
-        return;
-    }
-
-    #include <thread>
-    #include "nethogs/updates.cpp"
 
     std::thread nethogs_monitor_thread(&nethogsMonitorThreadProc);
 

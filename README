@@ -4,6 +4,7 @@ System-Monitor
 
 Optional dependencies :
 - libgksu2 - recommended
+- libpcap - recommended
 - libgnomesu
 - libselinux
 - lsb_release in PATH - recommended on linux
