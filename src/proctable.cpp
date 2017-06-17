@@ -829,7 +829,7 @@ get_process_network_info(ProcInfo *info)
 	for (const auto& update : updates)
 	{
 		if((int)update.second.record.pid == (int)info->pid &&
-		update.first.action == NETHOGS_APP_ACTION_SET){
+		update.first == NETHOGS_APP_ACTION_SET){
 
             gulong coef = long(GsmApplication::get()->config.update_interval) / 1000;
             oTotal = update.second.record.sent_bytes;
