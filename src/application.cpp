@@ -159,6 +159,11 @@ GsmApplication::load_settings()
         cb_solaris_mode_changed (*this->settings.operator->(), key, this);
     });
 
+    config.nethogs = this->settings->get_boolean (GSM_SETTING_NETHOGS);
+    this->settings->signal_changed(GSM_SETTING_NETHOGS).connect ([this](const Glib::ustring& key) {
+        cb_solaris_mode_changed (*this->settings.operator->(), key, this);
+    });
+
     config.draw_stacked = this->settings->get_boolean (GSM_SETTING_DRAW_STACKED);
     this->settings->signal_changed(GSM_SETTING_DRAW_STACKED).connect ([this](const Glib::ustring& key) {
         cb_draw_stacked_changed (*this->settings.operator->(), key, this);

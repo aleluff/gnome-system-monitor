@@ -15,6 +15,7 @@
 #include "util.h"
 
 static GtkDialog *prefs_dialog = NULL;
+GtkCheckButton *nethogs_button;
 
 static void
 prefs_dialog_button_pressed (GtkDialog *dialog, gint id, gpointer data)
@@ -253,6 +254,11 @@ create_preferences_dialog (GsmApplication *app)
     GtkCheckButton *draw_smooth_button = GTK_CHECK_BUTTON (gtk_builder_get_object (builder, "draw_smooth_button"));
     g_settings_bind (app->settings->gobj (), GSM_SETTING_DRAW_SMOOTH,
                      draw_smooth_button, "active",
+                     G_SETTINGS_BIND_DEFAULT);
+
+    nethogs_button = GTK_CHECK_BUTTON (gtk_builder_get_object (builder, "nethogs_button"));
+    g_settings_bind (app->settings->gobj (), GSM_SETTING_NETHOGS,
+                     nethogs_button, "active",
                      G_SETTINGS_BIND_DEFAULT);
 
     create_field_page (builder, GTK_TREE_VIEW (app->tree), "proctree");

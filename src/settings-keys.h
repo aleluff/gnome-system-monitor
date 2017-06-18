@@ -17,6 +17,7 @@
 #define GSM_SETTING_SHOW_DEPENDENCIES       "show-dependencies"
 #define GSM_SETTING_SHOW_KILL_DIALOG        "kill-dialog"
 #define GSM_SETTING_SOLARIS_MODE            "solaris-mode"
+#define GSM_SETTING_NETHOGS                 "nethogs"
 #define GSM_SETTING_GRAPH_UPDATE_INTERVAL   "graph-update-interval"
 #define GSM_SETTING_CPU_COLORS              "cpu-colors"
 #define GSM_SETTING_MEM_COLOR               "mem-color"

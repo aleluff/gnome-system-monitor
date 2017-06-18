@@ -54,6 +54,7 @@
 
 #include "application.h"
 #include "proctable.h"
+#include "prefsdialog.h"
 #include "prettytable.h"
 #include "util.h"
 #include "interface.h"
@@ -65,13 +66,39 @@
 
 #include <thread>
 #include "nethogs/updates.cpp"
+#include "gsm_gnomesu.h"
+#include "gsm_pkexec.h"
+
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <array>
 
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
 
 
+std::list <GtkTreeViewColumn> cols_network;
 int nethogs_status;
+
+struct Result {
+    gboolean val = FALSE;
+    bool prob = false;
+};
+
+static std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    while (!feof(pipe.get())) {
+        if (fgets(buffer.data(), 128, pipe.get()) != NULL)
+            result += buffer.data();
+    }
+    return result;
+}
 
 static void onNethogsUpdate(int action, NethogsMonitorRecord const* update)
 {
@@ -84,16 +111,92 @@ static void nethogsMonitorThreadProc()
 	Updates::setNetHogsMonitorStatus(nethogs_status);
 }
 
-static void init_nethogs (){
-
+static void init_nethogs (bool enable)
+{
     //problem no device + test autres system
 
-    //sudo setcap "cap_net_admin,cap_net_raw+pe"
+    if(!enable){
+        return;
+    }
 
     std::thread nethogs_monitor_thread(&nethogsMonitorThreadProc);
 
     nethogsmonitor_breakloop();
     nethogs_monitor_thread.detach();
+}
+
+static void showErrorMessage(std::string message)
+{
+    GtkMessageDialog *dialog = GTK_MESSAGE_DIALOG (gtk_message_dialog_new (
+        NULL,
+        GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_ERROR,
+        GTK_BUTTONS_OK,
+        "%s", message.c_str()));
+
+    gtk_dialog_run (GTK_DIALOG (dialog));
+    gtk_widget_destroy (GTK_WIDGET (dialog));
+}
+
+static Result runAdminCmd(const char * cmd)
+{
+    Result res;
+    procman_debug("Trying to run '%s' as root", cmd);
+
+    if (procman_has_pkexec())
+        res.val = gsm_pkexec_create_root_password_dialog_withagent(cmd);
+    else if (procman_has_gnomesu())
+        res.val = gsm_gnomesu_create_root_password_dialog(cmd);
+    else {
+        showErrorMessage("Error running command : Please install pkexec or gnomesu (libgnomesu0)");
+        res.prob = true;
+    }
+
+    return res;
+}
+
+static void switch_nethogs (bool enable)
+{
+    Result vis;
+
+    if(enable){
+
+        std::string capAccess = "cap_net_admin,cap_net_raw+ep";
+
+        char self_path[PATH_MAX];
+        readlink("/proc/self/exe", self_path, sizeof(self_path)-1);
+
+        std::string command = "getcap ";
+        command = command + std::string(self_path);
+
+        std::string cap = exec(command.c_str());
+        command = "";
+
+        if (cap.find(capAccess) == std::string::npos){
+            command = "setcap '" + capAccess + "' ";
+            command = command + std::string(self_path);
+        }
+
+        //test headers libpcap-dev (logiciel + code)
+
+        //http://www.tcpdump.org/release/libpcap-1.8.1.tar.gz
+        //command += "tar -xvf libpcap.tar.gz && cd libpcap && ./configure && make && make install";
+
+        vis = runAdminCmd(command.c_str());
+
+        if (!vis.prob){
+            if (vis.val)
+                init_nethogs(true);
+            else
+                showErrorMessage("Error installing lipcap (libpcap-dev), please install it");
+        }
+
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(nethogs_button), vis.val);
+    }
+
+    for (auto & col : cols_network){
+        gtk_tree_view_column_set_visible(&col, vis.val);
+    }
 }
 
 static void
@@ -596,6 +699,14 @@ proctable_new (GsmApplication * const app)
                 gtk_tree_view_column_set_min_width(column, 20);
                 break;
         }
+
+        switch(i)
+        {
+            case COL_NETIN:
+            case COL_NETOUT:
+                cols_network.push_back(*col);
+                break;
+        }
     }
     app->tree = proctree;
     app->top_of_tree = NULL;
@@ -623,7 +734,7 @@ proctable_new (GsmApplication * const app)
 
     app->selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (proctree));
     gtk_tree_selection_set_mode (app->selection, GTK_SELECTION_MULTIPLE);
-    
+
     g_signal_connect (G_OBJECT (app->selection),
                       "changed",
                       G_CALLBACK (cb_row_selected), app);
@@ -642,6 +753,8 @@ proctable_new (GsmApplication * const app)
     g_signal_connect (G_OBJECT (model_sort), "sort-column-changed",
                       G_CALLBACK (cb_save_tree_state), app);
 
+    gtk_widget_show (GTK_WIDGET (proctree));
+
     app->settings->signal_changed(GSM_SETTING_SHOW_DEPENDENCIES).connect([app](const Glib::ustring& key) {
         cb_show_dependencies_changed(*app->settings.operator->(), key, app);
     });
@@ -650,9 +763,13 @@ proctable_new (GsmApplication * const app)
         cb_show_whose_processes_changed(*app->settings.operator->(), key, app);
     });
 
-    gtk_widget_show (GTK_WIDGET (proctree));
+    app->settings->signal_changed(GSM_SETTING_NETHOGS).connect([app](const Glib::ustring& key) {
+        switch_nethogs(app->settings->get_boolean(GSM_SETTING_NETHOGS));
+    });
 
-    init_nethogs();
+    bool nethogs_setting = app->settings->get_boolean(GSM_SETTING_NETHOGS);
+    init_nethogs(nethogs_setting);
+    switch_nethogs(nethogs_setting);
 
     return proctree;
 }

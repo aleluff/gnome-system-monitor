@@ -4,6 +4,8 @@
 
 #include "application.h"
 
+extern GtkCheckButton *nethogs_button;
+
 void create_preferences_dialog (GsmApplication *app);
 
 #endif /* _GSM_PREFS_DIALOG_H_ */

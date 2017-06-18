@@ -29,7 +29,6 @@ static void load_gksu(void)
 gboolean gsm_gksu_create_root_password_dialog(const char *command)
 {
     GError *e = NULL;
-
     /* Returns FALSE or TRUE on success, depends on version ... */
     gksu_run(command, &e);
 

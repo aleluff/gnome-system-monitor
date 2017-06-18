@@ -28,6 +28,15 @@
       </_description>
     </key>
 
+    <key name="nethogs" type="b">
+      <default>false
+      </default>
+      <_summary>Network I/O (need admin rights)
+      </_summary>
+      <_description>Display Two new columns for each process : one for input bandwith, second for output
+      </_description>
+    </key>
+
     <key type="b" name="cpu-stacked-area-chart">
       <default>false
       </default>

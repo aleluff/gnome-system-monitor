@@ -77,6 +77,7 @@ struct ProcConfig
     GdkRGBA         frame_color;
     gint            num_cpus;
     bool solaris_mode;
+    bool nethogs;
     bool draw_stacked;
     bool draw_smooth;
     bool network_in_bits;
