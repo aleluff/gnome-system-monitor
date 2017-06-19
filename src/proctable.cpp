@@ -171,28 +171,33 @@ static void switch_nethogs (bool enable)
 
     if(enable){
 
-        char self_path[PATH_MAX];
-        ssize_t len = readlink("/proc/self/exe", self_path, sizeof(self_path)-1);
-        if (len != -1) {
-            self_path[len] = '\0';
+        if (exec("ldconfig -v 2>/dev/null |grep libpcap") == ""){
+            showMessage("Pcap is not installed on your system, please install it (libpcap-dev)", GTK_MESSAGE_ERROR);
+            vis.val = FALSE;
         }
-
-        if (!check_cap(self_path)){
-
-            std::string command = "setcap '" + cap_access + "' " + std::string(self_path);
-            vis = runAdminCmd(command.c_str());
-
-            if (!vis.prob){
-                if (vis.val && check_cap(self_path)){
-                    init_nethogs(true);
-                    showMessage("Successfully enable network I/O\nIf it the first time, please restart application for the changes to take effect", GTK_MESSAGE_INFO);
-                }
-                else
-                    showMessage("Error setting net_raw capabilities, please run 'sudo setcap \"cap_net_admin,cap_net_raw+ep\" /usr/bin/gnome-system-monitor'", GTK_MESSAGE_ERROR);
+        else {
+            char self_path[PATH_MAX];
+            ssize_t len = readlink("/proc/self/exe", self_path, sizeof(self_path)-1);
+            if (len != -1) {
+                self_path[len] = '\0';
             }
 
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(nethogs_button), vis.val);
+            if (!check_cap(self_path)){
+                std::string command = "setcap '" + cap_access + "' " + std::string(self_path);
+                vis = runAdminCmd(command.c_str());
+
+                if (!vis.prob){
+                    if (vis.val && check_cap(self_path)){
+                        init_nethogs(true);
+                        showMessage("Successfully enable network I/O\nIf it the first time, please restart application for the changes to take effect", GTK_MESSAGE_INFO);
+                    }
+                    else
+                        showMessage("Error setting net_raw capabilities, please run 'sudo setcap \"cap_net_admin,cap_net_raw+ep\" /usr/bin/gnome-system-monitor'", GTK_MESSAGE_ERROR);
+                }
+            }
         }
+
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(nethogs_button), vis.val);
     }
 
     for (auto & col : cols_network){
