@@ -5,6 +5,9 @@
 #include "gsm_pkexec.h"
 #include "util.h"
 
+
+#include <iostream>
+
 gboolean gsm_pkexec_create_root_password_dialog(const char *command)
 {
     gboolean ret = FALSE;

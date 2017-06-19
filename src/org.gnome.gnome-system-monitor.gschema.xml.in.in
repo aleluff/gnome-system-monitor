@@ -33,7 +33,7 @@
       </default>
       <_summary>Network I/O (need admin rights)
       </_summary>
-      <_description>Display Two new columns for each process : one for input bandwith, second for output
+      <_description>Display two new columns for each process : one for input bandwith, second for output
       </_description>
     </key>
 

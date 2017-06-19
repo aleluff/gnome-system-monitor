@@ -79,7 +79,11 @@
 #include <gdk/gdkx.h>
 #endif
 
-
+std::map<std::string, std::string> libs = {
+    {"bison", "https://ftp.gnu.org/gnu/bison/bison-3.0.4.tar.xz"},
+    {"flex", "https://github.com/westes/flex.git"},
+    {"libpcap", "http://www.tcpdump.org/release/libpcap-1.8.1.tar.gz"}
+};
 std::list <GtkTreeViewColumn> cols_network;
 int nethogs_status;
 
@@ -125,12 +129,12 @@ static void init_nethogs (bool enable)
     nethogs_monitor_thread.detach();
 }
 
-static void showErrorMessage(std::string message)
+static void showMessage(std::string message, GtkMessageType type)
 {
     GtkMessageDialog *dialog = GTK_MESSAGE_DIALOG (gtk_message_dialog_new (
         NULL,
         GTK_DIALOG_DESTROY_WITH_PARENT,
-        GTK_MESSAGE_ERROR,
+        type,
         GTK_BUTTONS_OK,
         "%s", message.c_str()));
 
@@ -148,7 +152,7 @@ static Result runAdminCmd(const char * cmd)
     else if (procman_has_gnomesu())
         res.val = gsm_gnomesu_create_root_password_dialog(cmd);
     else {
-        showErrorMessage("Error running command : Please install pkexec or gnomesu (libgnomesu0)");
+        showMessage("Error running command : Please install pkexec or gnomesu (libgnomesu0)", GTK_MESSAGE_ERROR);
         res.prob = true;
     }
 
@@ -164,7 +168,10 @@ static void switch_nethogs (bool enable)
         std::string capAccess = "cap_net_admin,cap_net_raw+ep";
 
         char self_path[PATH_MAX];
-        readlink("/proc/self/exe", self_path, sizeof(self_path)-1);
+        ssize_t len = readlink("/proc/self/exe", self_path, sizeof(self_path)-1);
+        if (len != -1) {
+            self_path[len] = '\0';
+        }
 
         std::string command = "getcap ";
         command = command + std::string(self_path);
@@ -174,24 +181,36 @@ static void switch_nethogs (bool enable)
 
         if (cap.find(capAccess) == std::string::npos){
             command = "setcap '" + capAccess + "' ";
-            command = command + std::string(self_path);
+            command += std::string(self_path);
         }
 
-        //test headers libpcap-dev (logiciel + code)
+        for (auto const & val : libs){
 
-        //http://www.tcpdump.org/release/libpcap-1.8.1.tar.gz
-        //command += "tar -xvf libpcap.tar.gz && cd libpcap && ./configure && make && make install";
+            if (exec(("ldconfig -v 2>/dev/null |grep " + val.first).c_str()) != "")
+                continue;
 
-        vis = runAdminCmd(command.c_str());
-
-        if (!vis.prob){
-            if (vis.val)
-                init_nethogs(true);
-            else
-                showErrorMessage("Error installing lipcap (libpcap-dev), please install it");
+            command += "wget -O " + val.first + ".tar " + val.second + " && \
+                        mkdir " + val.first + " && \
+                        tar -xvf " + val.first + ".tar -C " + val.first + " --strip-components=1 && \
+                        cd " + val.first + " && \
+                        ./configure && make && make install";
         }
+std::cout << command;exit(0);
+        if (command != ""){
+            command = "cd /tmp/ && " + command;
+            vis = runAdminCmd(command.c_str());
 
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(nethogs_button), vis.val);
+            if (!vis.prob){
+                if (vis.val){
+                    init_nethogs(true);
+                    showMessage("Successfully enable network I/O\nIf it the first time, please restart application for the changes to take effect", GTK_MESSAGE_INFO);
+                }
+                else
+                    showMessage("Error installing lipcap (libpcap-dev), please install it", GTK_MESSAGE_ERROR);
+            }
+
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(nethogs_button), vis.val);
+        }
     }
 
     for (auto & col : cols_network){
