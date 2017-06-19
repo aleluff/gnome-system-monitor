@@ -79,6 +79,7 @@
 #include <gdk/gdkx.h>
 #endif
 
+std::string cap_access = "cap_net_admin,cap_net_raw+ep";
 std::list <GtkTreeViewColumn> cols_network;
 int nethogs_status;
 
@@ -154,13 +155,21 @@ static Result runAdminCmd(const char * cmd)
     return res;
 }
 
+static bool check_cap(std::string proc_path){
+
+        std::string command = "getcap ";
+        command = command + std::string(proc_path);
+
+        std::string cap = exec(command.c_str());
+
+        return cap.find(cap_access) != std::string::npos;
+}
+
 static void switch_nethogs (bool enable)
 {
     Result vis;
 
     if(enable){
-
-        std::string capAccess = "cap_net_admin,cap_net_raw+ep";
 
         char self_path[PATH_MAX];
         ssize_t len = readlink("/proc/self/exe", self_path, sizeof(self_path)-1);
@@ -168,18 +177,13 @@ static void switch_nethogs (bool enable)
             self_path[len] = '\0';
         }
 
-        std::string command = "getcap ";
-        command = command + std::string(self_path);
+        if (!check_cap(self_path)){
 
-        std::string cap = exec(command.c_str());
-
-        if (cap.find(capAccess) == std::string::npos){
-
-            command = "setcap '" + capAccess + "' " + std::string(self_path);
+            std::string command = "setcap '" + cap_access + "' " + std::string(self_path);
             vis = runAdminCmd(command.c_str());
 
             if (!vis.prob){
-                if (vis.val){
+                if (vis.val && check_cap(self_path)){
                     init_nethogs(true);
                     showMessage("Successfully enable network I/O\nIf it the first time, please restart application for the changes to take effect", GTK_MESSAGE_INFO);
                 }
