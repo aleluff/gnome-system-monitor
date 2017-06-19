@@ -79,11 +79,6 @@
 #include <gdk/gdkx.h>
 #endif
 
-std::map<std::string, std::string> libs = {
-    {"bison", "https://ftp.gnu.org/gnu/bison/bison-3.0.4.tar.xz"},
-    {"flex", "https://github.com/westes/flex.git"},
-    {"libpcap", "http://www.tcpdump.org/release/libpcap-1.8.1.tar.gz"}
-};
 std::list <GtkTreeViewColumn> cols_network;
 int nethogs_status;
 
@@ -177,27 +172,10 @@ static void switch_nethogs (bool enable)
         command = command + std::string(self_path);
 
         std::string cap = exec(command.c_str());
-        command = "";
 
         if (cap.find(capAccess) == std::string::npos){
-            command = "setcap '" + capAccess + "' ";
-            command += std::string(self_path);
-        }
 
-        for (auto const & val : libs){
-
-            if (exec(("ldconfig -v 2>/dev/null |grep " + val.first).c_str()) != "")
-                continue;
-
-            command += "wget -O " + val.first + ".tar " + val.second + " && \
-                        mkdir " + val.first + " && \
-                        tar -xvf " + val.first + ".tar -C " + val.first + " --strip-components=1 && \
-                        cd " + val.first + " && \
-                        ./configure && make && make install";
-        }
-std::cout << command;exit(0);
-        if (command != ""){
-            command = "cd /tmp/ && " + command;
+            command = "setcap '" + capAccess + "' " + std::string(self_path);
             vis = runAdminCmd(command.c_str());
 
             if (!vis.prob){
@@ -206,7 +184,7 @@ std::cout << command;exit(0);
                     showMessage("Successfully enable network I/O\nIf it the first time, please restart application for the changes to take effect", GTK_MESSAGE_INFO);
                 }
                 else
-                    showMessage("Error installing lipcap (libpcap-dev), please install it", GTK_MESSAGE_ERROR);
+                    showMessage("Error setting net_raw capabilities, please run 'sudo setcap \"cap_net_admin,cap_net_raw+ep\" /usr/bin/gnome-system-monitor'", GTK_MESSAGE_ERROR);
             }
 
             gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(nethogs_button), vis.val);
